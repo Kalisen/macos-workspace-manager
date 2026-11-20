@@ -37,8 +37,21 @@ struct Settings: Codable, Equatable {
         }
     }
 
+    struct MissionControlBanner: Codable, Equatable {
+        /// Shows the current workspace name in large characters while Mission Control is open.
+        var enabled = true
+
+        init() {}
+
+        init(from decoder: Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? enabled
+        }
+    }
+
     var shortcuts = Shortcuts()
     var titleBarMenu = TitleBarMenu()
+    var missionControlBanner = MissionControlBanner()
 
     init() {}
 
@@ -46,6 +59,7 @@ struct Settings: Codable, Equatable {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         shortcuts = try values.decodeIfPresent(Shortcuts.self, forKey: .shortcuts) ?? shortcuts
         titleBarMenu = try values.decodeIfPresent(TitleBarMenu.self, forKey: .titleBarMenu) ?? titleBarMenu
+        missionControlBanner = try values.decodeIfPresent(MissionControlBanner.self, forKey: .missionControlBanner) ?? missionControlBanner
     }
 
     static let directory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

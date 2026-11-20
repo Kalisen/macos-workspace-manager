@@ -6,9 +6,9 @@ Covers the use cases of [use-cases.md](use-cases.md). Each behaviour is tested o
 
 | Level | Proves | Runs | Location |
 |---|---|---|---|
-| Unit | Rules that need no system: homes, displacement, re-identification, naming, layout arithmetic, shortcut and settings parsing, persistence | `make test` | `Tests/WorkspacesTests`, `Tests/MacDesktopTests`, `Tests/WorkspaceManagerTests` |
+| Unit | Rules that need no system: homes, displacement, re-identification, naming, layout arithmetic, shortcut and settings parsing, persistence | `make test` | `Tests/WorkspacesTests`, `Tests/MacDesktopTests`, `Tests/MissionControlBannerTests`, `Tests/WorkspaceManagerTests` |
 | Contract | The private window-server data still has the shape the app reads. Read-only, against the running system; skipped without a display | `make test` | `SpaceReaderContractTests` |
-| Live | Synthetic input really switches desktops and moves a window. Takes over the pointer for a few seconds | `make live-test` | `LiveMoveTests` |
+| Live | Synthetic input really switches desktops and moves a window; Mission Control is detected and the banner shown. Takes over the screen for a few seconds | `make live-test` | `LiveMoveTests`, `LiveOverlayTests` |
 | Manual | What only a person or a real system event can trigger: menus, global shortcuts, dialogs, wake, display reconnect, reboot, login | Before a release, after a macOS update | Checklist below |
 
 Rules for placing a test:
@@ -53,6 +53,9 @@ Rules for placing a test:
 | UC11 | Rows shown, disabled and invalid shortcuts flagged, glyphs | Unit | `ShortcutsPanelTests`, `KeyStrokeTests` |
 | UC11 | Panel opens, button opens `config.json` | Manual | M6 |
 | UC12 | Toggle state, app running after login | Manual | M7 |
+| UC14 | Label placement per display, long names, stays in place, click-through, readable background | Unit | `WorkspaceBannerTests` |
+| UC14 | Opening and closing Mission Control detected; label on screen only in between | Live | `testLabelShowsWhileMissionControlIsOpenAndOnlyThen` |
+| UC14 | Name per display, follows a desktop switch, setting turns it off | Manual | M8 |
 | UC13 | Permission notes, `--status` output | Manual | M7 |
 
 ## Manual checklist
@@ -68,3 +71,4 @@ Use the installed app with both permissions granted and at least three desktops.
 | M5 | Note the desktops of three windows of two apps. Quit and reopen one app; then reboot. | Windows are on their desktop or listed as displaced with the right home; restore fixes them. |
 | M6 | Open "Shortcuts…", click "Edit Shortcuts…". Set one shortcut to `hyper+x` and another to one used by another app; restart the app. | Panel lists the configured shortcuts. `config.json` opens. After restart the menu reports both problems and the panel shows the first as invalid. |
 | M7 | Toggle "Start at Login", log out and in. Revoke Accessibility. Run `WorkspaceManager --status`. | App is running after login. The menu shows the missing-permission note. Status prints permissions, desktops and displaced windows. |
+| M8 | Open Mission Control with two displays. Switch desktop with `ctrl+→` while it is open. Click a window thumbnail under the label. Set `missionControlBanner.enabled` to `false`, restart, open Mission Control. | Each display shows its workspace name in large characters; the name follows the switch; the click selects the window and the label disappears. With the setting off, no label. |

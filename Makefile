@@ -10,9 +10,9 @@ build:
 test:
 	swift test
 
-# Moves a real TextEdit window: takes over the pointer and switches desktops for a few seconds.
+# Switches desktops, moves a real TextEdit window and opens Mission Control: takes over the screen for a few seconds.
 live-test:
-	WORKSPACE_MANAGER_LIVE=1 swift test --filter LiveMoveTests
+	WORKSPACE_MANAGER_LIVE=1 swift test --filter Live
 
 # Runs from the terminal, using the terminal's Accessibility and Screen Recording permissions.
 run: build

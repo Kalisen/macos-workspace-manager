@@ -29,6 +29,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.shortcuts.switchWorkspace, Settings().shortcuts.switchWorkspace)
         XCTAssertEqual(settings.titleBarMenu.modifiers, "ctrl")
         XCTAssertEqual(settings.titleBarMenu.height, Settings().titleBarMenu.height)
+        XCTAssertTrue(settings.missionControlBanner.enabled)
     }
 
     func testAMalformedFileIsAnError() throws {

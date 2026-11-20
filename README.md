@@ -7,6 +7,7 @@ Menu-bar app that turns Mission Control desktops into named workspaces and keeps
 - When macOS shuffles windows (wake, display reconnect, reboot), the menu bar shows how many are displaced and one command puts them back.
 - Send a window to a workspace from its title bar or from the keyboard.
 - Jump to a workspace from a keyboard-driven list.
+- See the current workspace name in large characters while Mission Control is open.
 
 Documentation: [supported use cases](docs/use-cases.md), [test plan](docs/test-plan.md).
 
@@ -29,7 +30,8 @@ Shortcuts are set in `~/Library/Application Support/WorkspaceManager/config.json
     "sendWindow": "ctrl+alt+shift+space",
     "restoreWindows": "ctrl+alt+r"
   },
-  "titleBarMenu": { "modifiers": "alt+shift", "height": 40 }
+  "titleBarMenu": { "modifiers": "alt+shift", "height": 40 },
+  "missionControlBanner": { "enabled": true }
 }
 ```
 
@@ -50,7 +52,7 @@ make app        # build/WorkspaceManager.app
 make install    # copy it to /Applications and start it
 make status     # what the app sees: desktops, window counts, displaced windows
 make test       # unit and read-only contract tests
-make live-test  # switches desktops and moves a real TextEdit window; takes over the pointer for a few seconds
+make live-test  # switches desktops, moves a real TextEdit window, opens Mission Control; takes over the screen for a few seconds
 ```
 
 ## How it works
@@ -63,6 +65,7 @@ macOS has no public API for Spaces. With SIP enabled:
 | Switch desktop | The user's own Mission Control shortcuts, pressed synthetically |
 | Move a window to a desktop | Synthetic title-bar drag while switching desktop. The private move calls are rejected by macOS for other apps' windows |
 | Title-bar menu | Event tap on modifier + right-click; apps cannot extend each other's menus |
+| Name over Mission Control | Undocumented Dock accessibility notifications signal open and close; a window marked stationary is not turned into a thumbnail |
 
 Every synthetic step is checked against the window server, so an ignored key press or a failed grab is reported instead of leaving a window in the wrong place.
 
@@ -103,6 +106,7 @@ State is stored in `~/Library/Application Support/WorkspaceManager/state.json`.
 |---|---|
 | `Workspaces` | Domain: desktop layout, workspace names, window placements, re-identification. No system calls |
 | `MacDesktop` | macOS adapter: reading Spaces and windows, switching desktop, moving windows |
+| `MissionControlBanner` | Workspace name over Mission Control. Depends on no other target; a failure disables only this feature |
 | `WorkspaceManager` | Menu-bar app: menus, shortcuts, title-bar click, persistence |
 
 ## Limitations
@@ -110,5 +114,5 @@ State is stored in `~/Library/Application Support/WorkspaceManager/state.json`.
 - A move takes over the pointer for about a second and visibly switches desktops; the app returns to the desktops that were showing.
 - Not tracked: windows shown on all desktops, fullscreen and minimized windows.
 - Windows without standard close and minimize buttons cannot be moved.
-- Mission Control itself does not display the names.
-- The private read calls are undocumented and may change with a macOS release.
+- In Mission Control only the current workspace of each display is named; the desktop thumbnails keep their "Desktop N" labels.
+- The private read calls and the Dock notifications are undocumented and may change with a macOS release.

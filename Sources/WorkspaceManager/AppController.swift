@@ -1,5 +1,6 @@
 import AppKit
 import MacDesktop
+import MissionControlBanner
 import os
 import ServiceManagement
 import Workspaces
@@ -14,6 +15,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let hotKeys = HotKeys()
     private var titleBarClick: TitleBarClick?
     private let shortcutsPanel = ShortcutsPanel()
+    private var missionControlOverlay: MissionControlOverlay?
+    private var missionControlOverlayFailed = false
 
     private var settings = Settings()
     private var state = WorkspaceState()
@@ -121,11 +124,40 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func spaceChanged() {
         observe()
+        missionControlOverlay?.refresh()
+    }
+
+    /// Optional feature: a failure is logged once and leaves the rest of the app untouched.
+    /// Needs the Accessibility permission; retried on each observation until it is granted.
+    private func startMissionControlOverlay() {
+        guard settings.missionControlBanner.enabled, missionControlOverlay == nil, !missionControlOverlayFailed, AXIsProcessTrusted() else { return }
+        let overlay = MissionControlOverlay { [weak self] in self?.workspaceLabels() ?? [] }
+        overlay.onFailure = { [weak self] error in
+            self?.log.warning("Mission Control banner stopped: \(String(describing: error), privacy: .public)")
+        }
+        do {
+            try overlay.start()
+            missionControlOverlay = overlay
+            log.info("Mission Control banner active")
+        } catch {
+            missionControlOverlayFailed = true
+            log.warning("Mission Control banner unavailable: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    /// Name of the workspace showing on each display.
+    private func workspaceLabels() -> [WorkspaceLabel] {
+        observe()
+        return layout.displays.compactMap { display in
+            guard let key = layout.key(ofSpace: display.currentSpaceID), let bounds = SpaceReader.bounds(ofDisplay: display.id) else { return nil }
+            return WorkspaceLabel(text: state.names.name(of: key, in: layout), displayBounds: bounds)
+        }
     }
 
     private func observe() {
         guard !moving else { return }
         watchTitleBarClicks()
+        startMissionControlOverlay()
         do {
             layout = try SpaceReader.layout()
             lastReadFailure = nil
