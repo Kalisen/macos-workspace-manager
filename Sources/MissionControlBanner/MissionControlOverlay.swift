@@ -20,6 +20,12 @@ public final class MissionControlOverlay {
     private var tracking: Timer?
     private var readings = 0
 
+    /// Called with the identifier of a workspace when the user right-clicks its large name or its desktop
+    /// in the bar. Mission Control has no action of its own on those clicks.
+    public var onRenameRequest: ((String) -> Void)?
+    private var clicks: RightClickListener?
+    private var bars: [DesktopBar] = []
+
     /// Reports a failure to follow the Dock after it relaunched; the overlay stays off until restarted.
     public var onFailure: ((Error) -> Void)?
 
@@ -58,23 +64,55 @@ public final class MissionControlOverlay {
         RunLoop.main.add(timer, forMode: .common)
         tracking = timer
         track()
+        if clicks == nil {
+            // Observed, not intercepted: the labels let every click through to Mission Control.
+            clicks = RightClickListener { [weak self] point in self?.rightClicked(at: point) }
+        }
+    }
+
+    /// - Parameter point: global top-left coordinates.
+    private func rightClicked(at point: CGPoint) {
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+        if let id = Self.workspace(at: point, bars: bars, labels: current) {
+            onRenameRequest?(id)
+        } else if let index = banner.index(at: NSPoint(x: point.x, y: primaryHeight - point.y)), let id = banner.drawn[index].currentID {
+            onRenameRequest?(id)
+        }
+    }
+
+    /// Identifier of the desktop of a bar under a point in global top-left coordinates.
+    static func workspace(at point: CGPoint, bars: [DesktopBar], labels: [WorkspaceLabel]) -> String? {
+        for bar in bars {
+            guard let display = display(of: bar, in: labels), bar.desktops.count == display.desktops.count,
+                  let index = bar.desktopIndex(at: point) else { continue }
+            return display.desktops[index].id
+        }
+        return nil
+    }
+
+    private static func display(of bar: DesktopBar, in labels: [WorkspaceLabel]) -> WorkspaceLabel? {
+        labels.first { abs($0.displayBounds.minX - bar.displayFrame.minX) < 2 && abs($0.displayBounds.minY - bar.displayFrame.minY) < 2 }
     }
 
     private func track() {
         // Also the safety net for a missed "closed" signal: the labels must not stay on screen.
         guard let bars = watcher.desktopBars else { return hide() }
-        guard labelsDesktops else { return }
+        self.bars = bars
         readings += 1
         if readings % Self.readingsPerNameRefresh == 0 { current = labels() }
+        guard labelsDesktops else { return }
         barLabels.show(bars.flatMap { bar -> [DesktopBarLabels.Label] in
-            guard let display = current.first(where: { abs($0.displayBounds.minX - bar.displayFrame.minX) < 2 && abs($0.displayBounds.minY - bar.displayFrame.minY) < 2 }) else { return [] }
-            return DesktopBarLabels.labels(for: bar, names: display.desktopNames, textWidth: DesktopBarLabels.measuredWidth)
+            guard let display = Self.display(of: bar, in: current) else { return [] }
+            return DesktopBarLabels.labels(for: bar, names: display.desktops.map(\.name), textWidth: DesktopBarLabels.measuredWidth)
         })
     }
 
     private func hide() {
         tracking?.invalidate()
         tracking = nil
+        clicks?.stop()
+        clicks = nil
+        bars = []
         banner.hide()
         barLabels.hide()
     }

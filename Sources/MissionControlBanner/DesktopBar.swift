@@ -29,6 +29,20 @@ struct DesktopBar: Equatable {
         return rect.height <= Self.nameHeight ? .name(rect) : .preview(rect)
     }
 
+    /// Index of the desktop drawn under a point, in global top-left coordinates.
+    func desktopIndex(at point: CGPoint) -> Int? {
+        desktops.indices.first { index in
+            switch slot(index) {
+            case .name(let rect): rect.insetBy(dx: -Self.nameHitMargin, dy: -Self.nameHitMargin).contains(point)
+            case .preview(let rect): rect.contains(point)
+            case nil: false
+            }
+        }
+    }
+
+    /// A desktop name is a small target; a click just beside it still counts.
+    private static let nameHitMargin: CGFloat = 6
+
     /// Room available to a label centred on a desktop, bounded by its neighbours.
     func spacing(around index: Int) -> CGFloat {
         let centres = desktops.map(\.midX)

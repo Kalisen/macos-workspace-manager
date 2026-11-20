@@ -23,7 +23,8 @@ Rules for placing a test:
 |---|---|---|---|
 | UC1 | Default name, rename, trim, empty restores default, name kept for a missing desktop | Unit | `WorkspaceNamesTests` |
 | UC1 | Names persisted | Unit | `StateStoreTests.testNamesAndPlacementsSurviveARestart` |
-| UC1 | Rename dialog, menu-bar title updates | Manual | M1 |
+| UC1 | Right-click target in the Mission Control bar: labelled or not, collapsed or expanded, fullscreen and mismatched bars excluded | Unit | `DesktopBarLabelsTests` |
+| UC1 | Rename dialog from each entry point, menu-bar title and labels update | Manual | M1, M9 |
 | UC2 | Desktop numbering, fullscreen Spaces excluded, window count | Unit | `DesktopLayoutTests`, `PlacementBookTests.testWindowCountPerWorkspace` |
 | UC2 | Layout read from macOS is coherent | Contract | `SpaceReaderContractTests` |
 | UC2 | Menu content and current mark | Manual | M1 |
@@ -57,3 +58,4 @@ Rules for placing a test:
 | UC14 | Bar labels: collapsed and expanded placement, unnamed desktops skipped, long names, mismatched or misplaced bar left unlabelled | Unit | `DesktopBarLabelsTests` |
 | UC14 | Opening and closing Mission Control detected; large name and bar labels on screen only in between | Live | `testLabelShowsWhileMissionControlIsOpenAndOnlyThen` |
 | UC14 | Name per display, bar labels collapsed and expanded, follows a desktop switch, settings turn them off | Manual | M8 | Name two desktops. Open Mission Control with two displays. Move the pointer to the top to expand the bar. Switch desktop with `ctrl+→`. Click a window thumbnail under the large name, then a labelled desktop. Set `missionControlBanner.desktopLabels`, then `enabled`, to `false`, restarting each time. | Each display shows its workspace name at its centre. The two named desktops are labelled in the bar, collapsed and expanded; the others keep "Desktop N". The large name follows the switch. Clicks reach the thumbnail and the desktop. First setting removes the bar labels only, the second all labels. |
+| M9 | In the menu, right-click a desktop, then Control-click another; rename both. Open Mission Control: right-click the large name, an unnamed desktop of the collapsed bar, and a preview of the expanded bar; rename each. Right-click a window thumbnail. | Each dialog is titled with the clicked desktop and appears over Mission Control, which stays open. New names show in the menu, the bar and the large name within a second. The right-click on a thumbnail opens no dialog. Plain clicks still switch desktop. |

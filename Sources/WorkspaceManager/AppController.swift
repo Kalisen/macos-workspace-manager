@@ -17,6 +17,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let shortcutsPanel = ShortcutsPanel()
     private var missionControlOverlay: MissionControlOverlay?
     private var missionControlOverlayFailed = false
+    /// The rename dialog while it is open, so that a second request does not stack another one.
+    private var renameDialog: NSAlert?
 
     private var settings = Settings()
     private var state = WorkspaceState()
@@ -132,6 +134,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func startMissionControlOverlay() {
         guard settings.missionControlBanner.enabled, missionControlOverlay == nil, !missionControlOverlayFailed, AXIsProcessTrusted() else { return }
         let overlay = MissionControlOverlay(labelsDesktops: settings.missionControlBanner.desktopLabels) { [weak self] in self?.workspaceLabels() ?? [] }
+        overlay.onRenameRequest = { [weak self] key in self?.rename(key, fromMissionControl: true) }
         overlay.onFailure = { [weak self] error in
             self?.log.warning("Mission Control banner stopped: \(String(describing: error), privacy: .public)")
         }
@@ -152,8 +155,12 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let bounds = SpaceReader.bounds(ofDisplay: display.id) else { return nil }
             // A fullscreen Space is not a workspace: no large name, the desktops are still labelled.
             let current = layout.key(ofSpace: display.currentSpaceID).map { state.names.name(of: $0, in: layout) } ?? ""
-            let custom = display.desktops.map { $0.isFullscreen ? nil : state.names.customName(of: $0.key) }
-            return WorkspaceLabel(text: current, displayBounds: bounds, desktopNames: custom)
+            let desktops = display.desktops.map { desktop in
+                desktop.isFullscreen
+                    ? WorkspaceLabel.Desktop(id: nil, name: nil)
+                    : WorkspaceLabel.Desktop(id: desktop.key, name: state.names.customName(of: desktop.key))
+            }
+            return WorkspaceLabel(text: current, currentID: layout.key(ofSpace: display.currentSpaceID), displayBounds: bounds, desktops: desktops)
         }
     }
 
@@ -213,7 +220,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         observe()
         menu.removeAllItems()
-        addWorkspaces(to: menu) { [weak self] desktop in self?.go(to: desktop) }
+        addWorkspaces(to: menu) { [weak self] desktop in self?.goOrRename(desktop) }
+        menu.addNote("Right-click a desktop to rename it")
         menu.addItem(.separator())
         menu.addItem(ActionItem("Rename Current Desktop…") { [weak self] in self?.renameCurrent() })
         let focused = WindowReader.focusedWindowID()
@@ -283,7 +291,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         observe()
         let menu = NSMenu(title: "Go to Desktop")
         menu.addNote("Go to desktop")
-        addWorkspaces(to: menu) { [weak self] desktop in self?.go(to: desktop) }
+        addWorkspaces(to: menu) { [weak self] desktop in self?.goOrRename(desktop) }
         let screen = NSScreen.main?.frame ?? .zero
         popUp(menu, at: NSPoint(x: screen.midX - 100, y: screen.midY + CGFloat(menu.numberOfItems) * 11))
     }
@@ -304,22 +312,46 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Actions
 
+    /// A workspace chosen in a menu: the secondary click (right button, or Control-click) renames it.
+    private func goOrRename(_ desktop: Desktop) {
+        // While a menu is tracking, the current event is the click that chose the item; it can be the
+        // press or the release depending on how the menu was opened.
+        let event = NSApp.currentEvent
+        let left: [NSEvent.EventType] = [.leftMouseDown, .leftMouseUp], right: [NSEvent.EventType] = [.rightMouseDown, .rightMouseUp]
+        let secondary = event.map { right.contains($0.type) || (left.contains($0.type) && $0.modifierFlags.contains(.control)) } ?? false
+        if secondary { rename(desktop.key) } else { go(to: desktop) }
+    }
+
     private func renameCurrent() {
         guard let display = activeDisplay, let key = layout.key(ofSpace: display.currentSpaceID) else { return }
+        rename(key)
+    }
+
+    /// - Parameter fromMissionControl: the dialog takes Mission Control down; it is reopened afterwards.
+    private func rename(_ key: WorkspaceKey, fromMissionControl: Bool = false) {
+        guard renameDialog == nil else { return }
         let alert = NSAlert()
-        alert.messageText = "Name this desktop"
+        alert.messageText = "Name \(state.names.name(of: key, in: layout))"
         alert.informativeText = "Leave empty to go back to the default name."
         let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-        field.stringValue = state.names.name(of: key, in: layout)
+        field.stringValue = state.names.customName(of: key) ?? ""
+        field.placeholderString = state.names.name(of: key, in: layout)
         alert.accessoryView = field
         alert.addButton(withTitle: "Rename")
         alert.addButton(withTitle: "Cancel")
         alert.window.initialFirstResponder = field
+        alert.window.level = .floating
+        renameDialog = alert
+        defer { renameDialog = nil }
         NSApp.activate(ignoringOtherApps: true)
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
-        state.names.rename(key, to: field.stringValue)
-        save()
-        updateTitle()
+        if alert.runModal() == .alertFirstButtonReturn {
+            state.names.rename(key, to: field.stringValue)
+            save()
+            updateTitle()
+        }
+        if fromMissionControl, missionControlOverlay?.isShowing == false {
+            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Mission Control.app"))
+        }
     }
 
     private func go(to desktop: Desktop) {

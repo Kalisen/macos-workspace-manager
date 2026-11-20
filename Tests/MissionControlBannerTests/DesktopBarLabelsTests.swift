@@ -50,4 +50,28 @@ final class DesktopBarLabelsTests: XCTestCase {
         XCTAssertNil(odd.slot(0))
         XCTAssertTrue(DesktopBarLabels.labels(for: odd, names: ["Billing"], textWidth: tenPerCharacter).isEmpty)
     }
+
+    // MARK: Right-click target
+
+    private func labels(_ desktops: [WorkspaceLabel.Desktop]) -> [WorkspaceLabel] {
+        [WorkspaceLabel(text: "Billing", currentID: "b", displayBounds: display, desktops: desktops)]
+    }
+    private let three: [WorkspaceLabel.Desktop] = [.init(id: "a", name: "Billing"), .init(id: "b", name: nil), .init(id: nil, name: nil)]
+
+    func testAPointOnADesktopOfTheBarNamesThatDesktopWhetherLabelledOrNot() {
+        XCTAssertEqual(MissionControlOverlay.workspace(at: CGPoint(x: 1300, y: 60), bars: [expanded], labels: labels(three)), "a")
+        XCTAssertEqual(MissionControlOverlay.workspace(at: CGPoint(x: 1700, y: 60), bars: [expanded], labels: labels(three)), "b")
+        // Collapsed: where the name is drawn, not where the Dock reports it.
+        XCTAssertEqual(MissionControlOverlay.workspace(at: CGPoint(x: 3200, y: 20), bars: [collapsed], labels: labels(three)), "b")
+    }
+
+    func testAPointElsewhereOrOnAFullscreenSpaceNamesNothing() {
+        XCTAssertNil(MissionControlOverlay.workspace(at: CGPoint(x: 1550, y: 60), bars: [expanded], labels: labels(three)))
+        XCTAssertNil(MissionControlOverlay.workspace(at: CGPoint(x: 1300, y: 600), bars: [expanded], labels: labels(three)))
+        XCTAssertNil(MissionControlOverlay.workspace(at: CGPoint(x: 2000, y: 60), bars: [expanded], labels: labels(three)))
+    }
+
+    func testABarThatDoesNotMatchTheDesktopsNamesNothing() {
+        XCTAssertNil(MissionControlOverlay.workspace(at: CGPoint(x: 1300, y: 60), bars: [expanded], labels: labels(Array(three.prefix(2)))))
+    }
 }

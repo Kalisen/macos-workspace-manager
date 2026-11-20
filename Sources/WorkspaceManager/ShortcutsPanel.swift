@@ -61,6 +61,7 @@ final class ShortcutsPanel: NSObject {
             ("Send the focused window to a workspace", key(settings.shortcuts.sendWindow)),
             ("Send a window to a workspace, on its title bar", click),
             ("Restore displaced windows", key(settings.shortcuts.restoreWindows)),
+            ("Rename a desktop: in the menu, on its name or its desktop in Mission Control", "Right-click"),
             ("Pick one of the first nine workspaces in a list", "1 – 9"),
             ("Move in a list, confirm, cancel", "↑ ↓  ↩  ⎋"),
         ]

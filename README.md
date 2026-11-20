@@ -19,6 +19,7 @@ Documentation: [supported use cases](docs/use-cases.md), [test plan](docs/test-p
 | Send the focused window to a workspace | `ctrl+alt+shift+space` |
 | Send any window to a workspace | `alt+shift` + right-click on its title bar |
 | Restore displaced windows | `ctrl+alt+r` |
+| Rename a desktop | Right-click (or Control-click) it in the menu or the workspace list; in Mission Control, right-click the large name or a desktop of the top bar |
 | Rename the current desktop, keep the current layout, start at login, list the shortcuts | Menu-bar item |
 
 Shortcuts are set in `~/Library/Application Support/WorkspaceManager/config.json` (menu: Open Configuration) and read at launch. An empty string disables a shortcut.

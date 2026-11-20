@@ -37,7 +37,7 @@ final class LiveOverlayTests: XCTestCase {
         overlay = MissionControlOverlay {
             // Every desktop of the main display gets a name, however many there are.
             let desktops = overlay.watcher.desktopBars?.first { $0.displayFrame.origin == bounds.origin }?.desktops.count ?? 0
-            return [WorkspaceLabel(text: "Live test", displayBounds: bounds, desktopNames: Array(repeating: "Live", count: desktops))]
+            return [WorkspaceLabel(text: "Live test", displayBounds: bounds, desktops: Array(repeating: .init(id: "any", name: "Live"), count: desktops))]
         }
         try overlay.start()
         XCTAssertFalse(overlay.isShowing)
