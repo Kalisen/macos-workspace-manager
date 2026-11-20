@@ -13,7 +13,7 @@ Documentation: [supported use cases](docs/use-cases.md), [test plan](docs/test-p
 
 ## Usage
 
-| Action | Default | 
+| Action | Default |
 |---|---|
 | Go to a workspace | `ctrl+alt+space`, then pick or press `1`–`9` |
 | Send the focused window to a workspace | `ctrl+alt+shift+space` |
@@ -38,8 +38,8 @@ Shortcuts are set in `~/Library/Application Support/WorkspaceManager/config.json
 
 ## Requirements
 
-- macOS 14 or later, System Integrity Protection left enabled.
-- **Accessibility** permission: moving windows, title-bar click.
+- macOS 14 or later, System Integrity Protection left enabled. Developed and tested on macOS 26.6 only.
+- **Accessibility** permission: moving windows, title-bar click, labels and right-click rename in Mission Control.
 - **Screen Recording** permission: reading window titles on hidden desktops, needed to recognise windows after an app restart or reboot. Nothing is captured.
 - Mission Control shortcuts **Move left a space** and **Move right a space** enabled (System Settings > Keyboard > Keyboard Shortcuts > Mission Control). Enabling **Switch to Desktop N** makes distant moves faster.
 
@@ -66,7 +66,7 @@ macOS has no public API for Spaces. With SIP enabled:
 | Switch desktop | The user's own Mission Control shortcuts, pressed synthetically |
 | Move a window to a desktop | Synthetic title-bar drag while switching desktop. The private move calls are rejected by macOS for other apps' windows |
 | Title-bar menu | Event tap on modifier + right-click; apps cannot extend each other's menus |
-| Names over Mission Control | Undocumented Dock accessibility notifications signal open and close; a window marked stationary is not turned into a thumbnail. The desktops of the top bar are located through the Dock's accessibility tree, read ten times a second while Mission Control is open |
+| Names over Mission Control | Undocumented Dock accessibility notifications signal open and close; a window marked stationary is not turned into a thumbnail. The desktops of the top bar are located through the Dock's accessibility tree, read ten times a second while Mission Control is open. Right-clicks on the labels are observed with a listen-only event tap, since AppKit's global event monitors receive nothing there |
 
 Every synthetic step is checked against the window server, so an ignored key press or a failed grab is reported instead of leaving a window in the wrong place.
 

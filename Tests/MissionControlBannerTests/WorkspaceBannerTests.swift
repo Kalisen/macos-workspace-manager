@@ -46,6 +46,10 @@ final class WorkspaceBannerTests: XCTestCase {
             XCTAssertTrue(window.ignoresMouseEvents)
             XCTAssertGreaterThan(window.backgroundAlpha, 0.5, "text needs a contrasting background")
         }
+        // A right-click is attributed to the large name under it.
+        let second = banner.windows[1].frame
+        XCTAssertEqual(banner.index(at: NSPoint(x: second.midX, y: second.midY)), 1)
+        XCTAssertNil(banner.index(at: NSPoint(x: second.maxX + 50, y: second.midY)))
         banner.hide()
         XCTAssertFalse(banner.isShowing)
     }
