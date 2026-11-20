@@ -59,4 +59,24 @@ final class LiveMoveTests: XCTestCase {
         }
         try SpaceSwitcher().go(toSpace: display.currentSpaceID)
     }
+
+    /// With the "Switch to Desktop N" shortcuts enabled, any desktop is one key press away.
+    func testDistantDesktopIsReachedAndLeftAgain() throws {
+        let layout = try SpaceReader.layout()
+        let shortcuts = MissionControlShortcuts.read()
+        for display in layout.displays {
+            let start = display.currentSpaceID
+            let candidates = display.desktops.filter { !$0.isFullscreen && $0.spaceID != start }
+            guard let far = candidates.max(by: { abs(layout.steps(from: start, to: $0.spaceID)!) < abs(layout.steps(from: start, to: $1.spaceID)!) }) else { continue }
+            let began = Date()
+            try SpaceSwitcher(shortcuts: shortcuts).go(toSpace: far.spaceID)
+            let elapsed = Date().timeIntervalSince(began)
+            XCTAssertEqual(try SpaceReader.layout().display(ofSpace: far.spaceID)?.currentSpaceID, far.spaceID)
+            if let ordinal = layout.ordinal(of: far.key), shortcuts.desktop[ordinal] != nil {
+                XCTAssertLessThan(elapsed, 3, "direct shortcut for desktop \(ordinal) was not used")
+            }
+            try SpaceSwitcher(shortcuts: shortcuts).go(toSpace: start)
+            XCTAssertEqual(try SpaceReader.layout().display(ofSpace: start)?.currentSpaceID, start)
+        }
+    }
 }
