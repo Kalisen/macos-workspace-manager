@@ -53,10 +53,10 @@ struct Settings: Codable, Equatable {
     static let file = directory.appendingPathComponent("config.json")
 
     /// Reads the configuration, creating the file with defaults on first launch.
-    static func load() throws -> Settings {
+    static func load(from file: URL = file) throws -> Settings {
         guard FileManager.default.fileExists(atPath: file.path) else {
             let defaults = Settings()
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             try encoder.encode(defaults).write(to: file, options: .atomic)

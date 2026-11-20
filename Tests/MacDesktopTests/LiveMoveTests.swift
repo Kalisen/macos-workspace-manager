@@ -50,14 +50,25 @@ final class LiveMoveTests: XCTestCase {
         try SpaceSwitcher().go(toSpace: subject.spaceID)
         try mover.move(subject, toSpace: subject.spaceID, frame: subject.frame)
         XCTAssertEqual(SpaceReader.spaceIDs(ofWindow: subject.windowID), [subject.spaceID])
+        try assertFrameRestored(subject)
 
         if let other = layout.displays.first(where: { $0.id != display.id }) {
             try mover.move(subject, toSpace: other.currentSpaceID)
             XCTAssertEqual(SpaceReader.spaceIDs(ofWindow: subject.windowID), [other.currentSpaceID])
             try mover.move(subject, toSpace: subject.spaceID, frame: subject.frame)
             XCTAssertEqual(SpaceReader.spaceIDs(ofWindow: subject.windowID), [subject.spaceID])
+            try assertFrameRestored(subject)
         }
         try SpaceSwitcher().go(toSpace: display.currentSpaceID)
+    }
+
+    private func assertFrameRestored(_ window: LiveWindow, line: UInt = #line) throws {
+        let now = try XCTUnwrap(WindowReader.windows(in: try SpaceReader.layout()).first { $0.windowID == window.windowID }?.frame, line: line)
+        let tolerance = Double(WindowMover.frameTolerance)
+        XCTAssertEqual(now.x, window.frame.x, accuracy: tolerance, line: line)
+        XCTAssertEqual(now.y, window.frame.y, accuracy: tolerance, line: line)
+        XCTAssertEqual(now.width, window.frame.width, accuracy: tolerance, line: line)
+        XCTAssertEqual(now.height, window.frame.height, accuracy: tolerance, line: line)
     }
 
     /// With the "Switch to Desktop N" shortcuts enabled, any desktop is one key press away.

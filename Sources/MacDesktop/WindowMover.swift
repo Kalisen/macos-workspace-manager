@@ -29,6 +29,8 @@ public enum WindowMoveError: Error, CustomStringConvertible {
 public struct WindowMover {
     private static let grabTimeout = 1.0
     private static let grabAttempts = 3
+    /// Window frames read from the window list and from the app differ by a point depending on focus.
+    static let frameTolerance: CGFloat = 2
 
     let switcher: SpaceSwitcher
 
@@ -167,9 +169,17 @@ public struct WindowMover {
         return CGRect(origin: origin, size: extent)
     }
 
+    /// Apps can ignore a frame change that arrives while the window is still settling on a new display
+    /// or Space, so the frame is re-applied until the window reports it.
     private static func setFrame(_ element: AXUIElement, _ frame: CGRect) {
         var origin = frame.origin, size = frame.size
-        if let value = AXValueCreate(.cgPoint, &origin) { AXUIElementSetAttributeValue(element, kAXPositionAttribute as CFString, value) }
-        if let value = AXValueCreate(.cgSize, &size) { AXUIElementSetAttributeValue(element, kAXSizeAttribute as CFString, value) }
+        guard let position = AXValueCreate(.cgPoint, &origin), let extent = AXValueCreate(.cgSize, &size) else { return }
+        for _ in 0..<5 {
+            AXUIElementSetAttributeValue(element, kAXPositionAttribute as CFString, position)
+            AXUIElementSetAttributeValue(element, kAXSizeAttribute as CFString, extent)
+            SyntheticInput.pause(0.1)
+            guard let now = rect(of: element) else { return }
+            if abs(now.minX - frame.minX) <= frameTolerance, abs(now.minY - frame.minY) <= frameTolerance { return }
+        }
     }
 }

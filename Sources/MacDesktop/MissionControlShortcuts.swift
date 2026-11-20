@@ -19,7 +19,12 @@ public struct MissionControlShortcuts: Sendable {
     private static let controlArrow = CGEventFlags([.maskControl, .maskSecondaryFn, .maskNumericPad])
 
     public static func read() -> MissionControlShortcuts {
-        let stored = UserDefaults(suiteName: "com.apple.symbolichotkeys")?.dictionary(forKey: "AppleSymbolicHotKeys") ?? [:]
+        MissionControlShortcuts(stored: UserDefaults(suiteName: "com.apple.symbolichotkeys")?.dictionary(forKey: "AppleSymbolicHotKeys") ?? [:])
+    }
+
+    /// - Parameter stored: the `AppleSymbolicHotKeys` preference. macOS omits entries the user never changed:
+    ///   the left/right shortcuts are then on with their default keys, the "Switch to Desktop N" ones are off.
+    init(stored: [String: Any]) {
         func shortcut(_ id: Int, default fallback: SystemShortcut?) -> SystemShortcut? {
             guard let entry = stored[String(id)] as? [String: Any] else { return fallback }
             guard (entry["enabled"] as? Bool) == true else { return nil }
@@ -27,12 +32,11 @@ public struct MissionControlShortcuts: Sendable {
             return SystemShortcut(keyCode: CGKeyCode(parameters[1]), flags: CGEventFlags(rawValue: UInt64(parameters[2])))
         }
         var desktop: [Int: SystemShortcut] = [:]
-        for n in 1...desktopCount {
-            desktop[n] = shortcut(firstDesktopID + n - 1, default: nil)
+        for n in 1...Self.desktopCount {
+            desktop[n] = shortcut(Self.firstDesktopID + n - 1, default: nil)
         }
-        return MissionControlShortcuts(
-            left: shortcut(leftID, default: SystemShortcut(keyCode: 123, flags: controlArrow)),
-            right: shortcut(rightID, default: SystemShortcut(keyCode: 124, flags: controlArrow)),
-            desktop: desktop)
+        left = shortcut(Self.leftID, default: SystemShortcut(keyCode: 123, flags: Self.controlArrow))
+        right = shortcut(Self.rightID, default: SystemShortcut(keyCode: 124, flags: Self.controlArrow))
+        self.desktop = desktop
     }
 }

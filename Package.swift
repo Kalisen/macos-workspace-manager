@@ -12,5 +12,6 @@ let package = Package(
         .executableTarget(name: "WorkspaceManager", dependencies: ["Workspaces", "MacDesktop"]),
         .testTarget(name: "WorkspacesTests", dependencies: ["Workspaces"]),
         .testTarget(name: "MacDesktopTests", dependencies: ["MacDesktop"]),
+        .testTarget(name: "WorkspaceManagerTests", dependencies: ["WorkspaceManager"]),
     ]
 )

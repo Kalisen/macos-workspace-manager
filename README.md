@@ -8,6 +8,8 @@ Menu-bar app that turns Mission Control desktops into named workspaces and keeps
 - Send a window to a workspace from its title bar or from the keyboard.
 - Jump to a workspace from a keyboard-driven list.
 
+Documentation: [supported use cases](docs/use-cases.md), [test plan](docs/test-plan.md).
+
 ## Usage
 
 | Action | Default | 
@@ -47,8 +49,8 @@ make run        # from a terminal, using the terminal's permissions
 make app        # build/WorkspaceManager.app
 make install    # copy it to /Applications and start it
 make status     # what the app sees: desktops, window counts, displaced windows
-make test
-make live-test  # moves a real TextEdit window; takes over the pointer for a few seconds
+make test       # unit and read-only contract tests
+make live-test  # switches desktops and moves a real TextEdit window; takes over the pointer for a few seconds
 ```
 
 ## How it works

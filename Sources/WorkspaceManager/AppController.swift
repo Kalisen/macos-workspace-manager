@@ -7,8 +7,6 @@ import Workspaces
 /// Menu-bar app: names workspaces, tracks which workspace each window belongs to, and puts windows back.
 final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private static let observationInterval = 2.0
-    /// After wake or a display change macOS may shuffle windows by itself; moves seen in this period do not re-home windows.
-    private static let distrustPeriod = 60.0
 
     private let log = Logger(subsystem: "workspace-manager", category: "app")
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -21,7 +19,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var state = WorkspaceState()
     private var layout = DesktopLayout(displays: [])
     private var windows: [LiveWindow] = []
-    private var distrustUntil = Date()
+    private var settling = SettlingPeriod()
     private var moving = false
     private var problems: [String] = []
     private var lastReadFailure: String?
@@ -38,7 +36,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
 
-        distrust()
+        settling.systemRearranged(at: Date())
         let workspace = NSWorkspace.shared.notificationCenter
         workspace.addObserver(self, selector: #selector(systemRearranged), name: NSWorkspace.didWakeNotification, object: nil)
         workspace.addObserver(self, selector: #selector(spaceChanged), name: NSWorkspace.activeSpaceDidChangeNotification, object: nil)
@@ -118,15 +116,11 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     // MARK: Observation
 
     @objc private func systemRearranged() {
-        distrust()
+        settling.systemRearranged(at: Date())
     }
 
     @objc private func spaceChanged() {
         observe()
-    }
-
-    private func distrust() {
-        distrustUntil = Date().addingTimeInterval(Self.distrustPeriod)
     }
 
     private func observe() {
@@ -146,7 +140,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         windows = WindowReader.windows(in: layout)
         let before = state
-        state.book.observe(windows, layout: layout, session: SpaceReader.bootSession(), trusted: Date() > distrustUntil, now: Date())
+        state.book.observe(windows, layout: layout, session: SpaceReader.bootSession(), trusted: settling.isOver(at: Date()), now: Date())
         if state != before { save() }
         updateTitle()
     }

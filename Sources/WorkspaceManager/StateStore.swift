@@ -11,15 +11,15 @@ enum StateStore {
     static let file = Settings.directory.appendingPathComponent("state.json")
 
     /// Empty state when nothing was saved yet.
-    static func load() throws -> WorkspaceState {
+    static func load(from file: URL = file) throws -> WorkspaceState {
         guard FileManager.default.fileExists(atPath: file.path) else { return WorkspaceState() }
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return try decoder.decode(WorkspaceState.self, from: Data(contentsOf: file))
     }
 
-    static func save(_ state: WorkspaceState) throws {
-        try FileManager.default.createDirectory(at: Settings.directory, withIntermediateDirectories: true)
+    static func save(_ state: WorkspaceState, to file: URL = file) throws {
+        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -27,8 +27,8 @@ enum StateStore {
     }
 
     /// Moves an unreadable state file aside so it is not overwritten.
-    static func quarantine() throws -> URL {
-        let target = Settings.directory.appendingPathComponent("state.unreadable-\(Int(Date().timeIntervalSince1970)).json")
+    static func quarantine(_ file: URL = file) throws -> URL {
+        let target = file.deletingLastPathComponent().appendingPathComponent("state.unreadable-\(Int(Date().timeIntervalSince1970)).json")
         try FileManager.default.moveItem(at: file, to: target)
         return target
     }

@@ -63,10 +63,6 @@ public struct DesktopLayout: Equatable, Sendable {
         workspaces.firstIndex { $0.key == key }.map { $0 + 1 }
     }
 
-    public func isVisible(spaceID: Int) -> Bool {
-        displays.contains { $0.currentSpaceID == spaceID }
-    }
-
     /// Signed number of "move one Space right" steps between two Spaces of the same display.
     public func steps(from: Int, to: Int) -> Int? {
         guard let display = display(ofSpace: from),
