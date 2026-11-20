@@ -344,6 +344,11 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         renameDialog = alert
         defer { renameDialog = nil }
         NSApp.activate(ignoringOtherApps: true)
+        // An alert opens on the screen with keyboard focus; it is moved to the screen of the desktop being
+        // named, once laid out and again once shown, because showing it re-centres it.
+        alert.layout()
+        placeOnDisplay(of: key, alert.window)
+        DispatchQueue.main.async { [weak self] in self?.placeOnDisplay(of: key, alert.window) }
         if alert.runModal() == .alertFirstButtonReturn {
             state.names.rename(key, to: field.stringValue)
             save()
@@ -352,6 +357,15 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if fromMissionControl, missionControlOverlay?.isShowing == false {
             NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Mission Control.app"))
         }
+    }
+
+    /// Centres a window horizontally, in the upper part of the display hosting a workspace.
+    private func placeOnDisplay(of key: WorkspaceKey, _ window: NSWindow) {
+        guard let desktop = layout.desktop(key: key), let display = layout.display(ofSpace: desktop.spaceID),
+              let bounds = SpaceReader.bounds(ofDisplay: display.id), let primary = NSScreen.screens.first else { return }
+        let top = primary.frame.height - bounds.minY
+        window.setFrameOrigin(NSPoint(x: bounds.midX - window.frame.width / 2,
+                                      y: top - bounds.height / 3 - window.frame.height / 2))
     }
 
     private func go(to desktop: Desktop) {
