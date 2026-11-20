@@ -2,7 +2,7 @@ import AppKit
 import MacDesktop
 
 /// Help window listing the shortcuts as currently configured.
-final class ShortcutsPanel {
+final class ShortcutsPanel: NSObject {
     private var panel: NSPanel?
 
     func show(_ settings: Settings) {
@@ -16,12 +16,14 @@ final class ShortcutsPanel {
         grid.rowSpacing = 8
         grid.column(at: 0).xPlacement = .trailing
 
-        let note = NSTextField(wrappingLabelWithString: "Change shortcuts in config.json (menu: Open Configuration), then restart the app.")
+        let note = NSTextField(wrappingLabelWithString: "Shortcuts are edited in config.json and applied when the app restarts.")
         note.textColor = .secondaryLabelColor
         note.font = .systemFont(ofSize: 11)
         note.preferredMaxLayoutWidth = 420
 
-        let stack = NSStackView(views: [grid, note])
+        let edit = NSButton(title: "Edit Shortcuts…", target: self, action: #selector(editShortcuts))
+
+        let stack = NSStackView(views: [grid, note, edit])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = 16
@@ -39,6 +41,12 @@ final class ShortcutsPanel {
         self.panel = panel
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
+    }
+
+    /// Opens config.json in the default editor for JSON files.
+    @objc private func editShortcuts() {
+        NSWorkspace.shared.open(Settings.file)
+        panel?.close()
     }
 
     /// Action and shortcut pairs; an unusable setting is shown as such instead of being hidden.
