@@ -54,21 +54,6 @@ Rules for placing a test:
 | UC11 | Panel opens, button opens `config.json` | Manual | M6 |
 | UC12 | Toggle state, app running after login | Manual | M7 |
 | UC14 | Label placement per display, long names, stays in place, click-through, readable background | Unit | `WorkspaceBannerTests` |
-| UC14 | Opening and closing Mission Control detected; label on screen only in between | Live | `testLabelShowsWhileMissionControlIsOpenAndOnlyThen` |
-| UC14 | Name per display, follows a desktop switch, setting turns it off | Manual | M8 |
-| UC13 | Permission notes, `--status` output | Manual | M7 |
-
-## Manual checklist
-
-Use the installed app with both permissions granted and at least three desktops.
-
-| ID | Steps | Expected |
-|---|---|---|
-| M1 | Open the menu. Rename the current desktop. Switch desktop with a trackpad swipe. | Menu lists every desktop per display with counts and a mark on the current one. Menu-bar title shows the new name, then follows the swipe. |
-| M2 | Press `ctrl+alt+space`, press a digit. Repeat choosing a desktop of the other display with the arrows. | The chosen desktop shows on its display. |
-| M3 | `alt+shift` + right-click a Brave title bar and a Ghostty title bar; pick a desktop. Repeat with `ctrl+alt+shift+space` and with the menu entry. Right-click a title bar without modifiers. | Each window lands on the chosen desktop and is not displaced; the view returns. The plain right-click behaves as before. |
-| M4 | Sleep and wake the Mac, or unplug and reconnect the external display. Within a minute, drag two windows to other desktops, one across displays. Press `ctrl+alt+r`. Repeat and choose "Keep Current Layout". | Displaced count appears with both windows listed. Restore puts them back at their previous frame and returns to the starting desktops. Keep clears the count without moving anything. |
-| M5 | Note the desktops of three windows of two apps. Quit and reopen one app; then reboot. | Windows are on their desktop or listed as displaced with the right home; restore fixes them. |
-| M6 | Open "Shortcuts…", click "Edit Shortcuts…". Set one shortcut to `hyper+x` and another to one used by another app; restart the app. | Panel lists the configured shortcuts. `config.json` opens. After restart the menu reports both problems and the panel shows the first as invalid. |
-| M7 | Toggle "Start at Login", log out and in. Revoke Accessibility. Run `WorkspaceManager --status`. | App is running after login. The menu shows the missing-permission note. Status prints permissions, desktops and displaced windows. |
-| M8 | Open Mission Control with two displays. Switch desktop with `ctrl+→` while it is open. Click a window thumbnail under the label. Set `missionControlBanner.enabled` to `false`, restart, open Mission Control. | Each display shows its workspace name in large characters; the name follows the switch; the click selects the window and the label disappears. With the setting off, no label. |
+| UC14 | Bar labels: collapsed and expanded placement, unnamed desktops skipped, long names, mismatched or misplaced bar left unlabelled | Unit | `DesktopBarLabelsTests` |
+| UC14 | Opening and closing Mission Control detected; large name and bar labels on screen only in between | Live | `testLabelShowsWhileMissionControlIsOpenAndOnlyThen` |
+| UC14 | Name per display, bar labels collapsed and expanded, follows a desktop switch, settings turn them off | Manual | M8 | Name two desktops. Open Mission Control with two displays. Move the pointer to the top to expand the bar. Switch desktop with `ctrl+→`. Click a window thumbnail under the large name, then a labelled desktop. Set `missionControlBanner.desktopLabels`, then `enabled`, to `false`, restarting each time. | Each display shows its workspace name at its centre. The two named desktops are labelled in the bar, collapsed and expanded; the others keep "Desktop N". The large name follows the switch. Clicks reach the thumbnail and the desktop. First setting removes the bar labels only, the second all labels. |

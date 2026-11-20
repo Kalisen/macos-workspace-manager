@@ -12,6 +12,11 @@ public struct WorkspaceNames: Codable, Equatable, Sendable {
         return "Missing desktop"
     }
 
+    /// nil for a workspace the user has not named.
+    public func customName(of key: WorkspaceKey) -> String? {
+        custom[key]
+    }
+
     /// An empty name removes the custom name.
     public mutating func rename(_ key: WorkspaceKey, to name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -11,7 +11,9 @@ final class WorkspaceNamesTests: XCTestCase {
     func testRenamingTrimsAndAnEmptyNameRestoresTheDefault() {
         names.rename("three", to: "  Billing ")
         XCTAssertEqual(names.name(of: "three", in: twoDisplays), "Billing")
+        XCTAssertEqual(names.customName(of: "three"), "Billing")
         names.rename("three", to: "  ")
+        XCTAssertNil(names.customName(of: "three"))
         XCTAssertEqual(names.name(of: "three", in: twoDisplays), "Desktop 3")
     }
 

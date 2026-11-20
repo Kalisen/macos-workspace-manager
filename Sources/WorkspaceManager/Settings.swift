@@ -40,12 +40,15 @@ struct Settings: Codable, Equatable {
     struct MissionControlBanner: Codable, Equatable {
         /// Shows the current workspace name in large characters while Mission Control is open.
         var enabled = true
+        /// Also shows each named workspace over its desktop in the bar at the top of Mission Control.
+        var desktopLabels = true
 
         init() {}
 
         init(from decoder: Decoder) throws {
             let values = try decoder.container(keyedBy: CodingKeys.self)
             enabled = try values.decodeIfPresent(Bool.self, forKey: .enabled) ?? enabled
+            desktopLabels = try values.decodeIfPresent(Bool.self, forKey: .desktopLabels) ?? desktopLabels
         }
     }
 

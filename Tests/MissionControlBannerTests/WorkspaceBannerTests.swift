@@ -26,6 +26,13 @@ final class WorkspaceBannerTests: XCTestCase {
         XCTAssertEqual(frame.midX, 1000)
     }
 
+    func testADisplayShowingAFullscreenSpaceGetsNoLargeName() {
+        _ = NSApplication.shared
+        let banner = WorkspaceBanner()
+        banner.show([WorkspaceLabel(text: "", displayBounds: CGRect(x: 0, y: 0, width: 2000, height: 1000))])
+        XCTAssertFalse(banner.isShowing)
+    }
+
     func testOneLabelPerDisplayThatMissionControlLeavesInPlaceAndClicksPassThrough() throws {
         _ = NSApplication.shared
         let banner = WorkspaceBanner()
@@ -33,12 +40,11 @@ final class WorkspaceBannerTests: XCTestCase {
             WorkspaceLabel(text: "Billing", displayBounds: CGRect(x: 0, y: 0, width: 2000, height: 1000)),
             WorkspaceLabel(text: "Personal", displayBounds: CGRect(x: 2000, y: 0, width: 1000, height: 800)),
         ])
-        XCTAssertEqual(banner.windows.count, 2)
+        XCTAssertEqual(banner.windows.map(\.labelText), ["Billing", "Personal"])
         for window in banner.windows {
             XCTAssertTrue(window.collectionBehavior.contains(.stationary))
             XCTAssertTrue(window.ignoresMouseEvents)
-            let background = try XCTUnwrap(window.contentView?.layer?.backgroundColor, "text needs a contrasting background")
-            XCTAssertGreaterThan(background.alpha, 0.5)
+            XCTAssertGreaterThan(window.backgroundAlpha, 0.5, "text needs a contrasting background")
         }
         banner.hide()
         XCTAssertFalse(banner.isShowing)

@@ -30,6 +30,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(settings.titleBarMenu.modifiers, "ctrl")
         XCTAssertEqual(settings.titleBarMenu.height, Settings().titleBarMenu.height)
         XCTAssertTrue(settings.missionControlBanner.enabled)
+        XCTAssertTrue(settings.missionControlBanner.desktopLabels)
     }
 
     func testAMalformedFileIsAnError() throws {

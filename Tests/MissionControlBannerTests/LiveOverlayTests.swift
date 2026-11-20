@@ -33,7 +33,12 @@ final class LiveOverlayTests: XCTestCase {
 
     func testLabelShowsWhileMissionControlIsOpenAndOnlyThen() throws {
         let bounds = CGDisplayBounds(CGMainDisplayID())
-        let overlay = MissionControlOverlay { [WorkspaceLabel(text: "Live test", displayBounds: bounds)] }
+        var overlay: MissionControlOverlay!
+        overlay = MissionControlOverlay {
+            // Every desktop of the main display gets a name, however many there are.
+            let desktops = overlay.watcher.desktopBars?.first { $0.displayFrame.origin == bounds.origin }?.desktops.count ?? 0
+            return [WorkspaceLabel(text: "Live test", displayBounds: bounds, desktopNames: Array(repeating: "Live", count: desktops))]
+        }
         try overlay.start()
         XCTAssertFalse(overlay.isShowing)
 
@@ -41,8 +46,12 @@ final class LiveOverlayTests: XCTestCase {
         addTeardownBlock { if overlay.isShowing { try self.toggleMissionControl() } }
         XCTAssertTrue(spin(upTo: 3) { overlay.isShowing }, "opening Mission Control was not detected")
         XCTAssertTrue(spin(upTo: 2) { self.onScreen(overlay.windowNumbers) }, "label is not on screen")
+        XCTAssertTrue(spin(upTo: 3) { self.onScreen(overlay.desktopLabelWindowNumbers) }, "desktops of the bar are not labelled")
+        let desktops = overlay.watcher.desktopBars?.first { $0.displayFrame.origin == bounds.origin }?.desktops.count
+        XCTAssertEqual(overlay.desktopLabelWindowNumbers.count, desktops)
 
         try toggleMissionControl()
         XCTAssertTrue(spin(upTo: 3) { !overlay.isShowing }, "closing Mission Control was not detected")
+        XCTAssertTrue(overlay.desktopLabelWindowNumbers.isEmpty)
     }
 }

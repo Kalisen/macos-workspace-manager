@@ -131,7 +131,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Needs the Accessibility permission; retried on each observation until it is granted.
     private func startMissionControlOverlay() {
         guard settings.missionControlBanner.enabled, missionControlOverlay == nil, !missionControlOverlayFailed, AXIsProcessTrusted() else { return }
-        let overlay = MissionControlOverlay { [weak self] in self?.workspaceLabels() ?? [] }
+        let overlay = MissionControlOverlay(labelsDesktops: settings.missionControlBanner.desktopLabels) { [weak self] in self?.workspaceLabels() ?? [] }
         overlay.onFailure = { [weak self] error in
             self?.log.warning("Mission Control banner stopped: \(String(describing: error), privacy: .public)")
         }
@@ -145,12 +145,15 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
     }
 
-    /// Name of the workspace showing on each display.
+    /// Per display: the name of the workspace showing, and the custom names of its desktops.
     private func workspaceLabels() -> [WorkspaceLabel] {
         observe()
         return layout.displays.compactMap { display in
-            guard let key = layout.key(ofSpace: display.currentSpaceID), let bounds = SpaceReader.bounds(ofDisplay: display.id) else { return nil }
-            return WorkspaceLabel(text: state.names.name(of: key, in: layout), displayBounds: bounds)
+            guard let bounds = SpaceReader.bounds(ofDisplay: display.id) else { return nil }
+            // A fullscreen Space is not a workspace: no large name, the desktops are still labelled.
+            let current = layout.key(ofSpace: display.currentSpaceID).map { state.names.name(of: $0, in: layout) } ?? ""
+            let custom = display.desktops.map { $0.isFullscreen ? nil : state.names.customName(of: $0.key) }
+            return WorkspaceLabel(text: current, displayBounds: bounds, desktopNames: custom)
         }
     }
 

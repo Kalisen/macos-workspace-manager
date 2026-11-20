@@ -9,7 +9,7 @@ Terms: a **workspace** is a Mission Control desktop that can hold windows (fulls
 | UC1 | Name a workspace | "Rename Current Desktop…" names the desktop showing on the active display. An empty name restores "Desktop N". Names survive restarts, reboots and display reconnection. |
 | UC2 | See where I am | The menu bar shows the current workspace name. The menu lists the workspaces of each display with their window count and marks the current one. |
 | UC3 | Go to a workspace | From the menu or the workspace list (`ctrl+alt+space`): pick with the pointer, arrows or digits `1`–`9`. Works across displays. |
-| UC14 | See the workspace name in Mission Control | While Mission Control is open, each display shows the name of its current workspace in large characters at its centre; it follows a desktop switch made inside Mission Control and disappears on exit. Clicks pass through it. `missionControlBanner.enabled` in `config.json` turns it off. |
+| UC14 | See workspace names in Mission Control | While Mission Control is open: each display shows the name of its current workspace in large characters at its centre, and each desktop with a custom name is labelled in the bar at the top — in place of "Desktop N" while the bar is collapsed, across the preview when it is expanded. Labels follow the bar and a desktop switch, disappear on exit, and let clicks through. `missionControlBanner.enabled` turns everything off, `missionControlBanner.desktopLabels` only the bar labels. |
 
 ## Windows
 
@@ -35,6 +35,6 @@ Terms: a **workspace** is a Mission Control desktop that can hold windows (fulls
 
 - Windows shown on all desktops, fullscreen windows, minimized windows: not tracked.
 - Windows without standard close and minimize buttons: tracked, cannot be moved.
-- Names on the desktop thumbnails of Mission Control.
+- Labels on unnamed desktops or fullscreen Spaces of the Mission Control bar: they keep the text macOS gives them.
 - A home whose desktop was removed: the window stays displaced and is reported on restore.
 - Applying configuration changes without restarting the app.

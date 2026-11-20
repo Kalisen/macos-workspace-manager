@@ -1,24 +1,29 @@
 import AppKit
 
-/// A workspace name to show on one display.
+/// The workspace names to show on one display.
 public struct WorkspaceLabel: Equatable {
+    /// Name of the workspace currently showing, drawn large at the centre of the display. Empty draws nothing.
     public let text: String
     /// Display bounds in global top-left coordinates.
     public let displayBounds: CGRect
+    /// One entry per desktop of the display, in Mission Control order. nil leaves the desktop unlabelled,
+    /// which suits desktops without a custom name: Mission Control already writes "Desktop N" for them.
+    public let desktopNames: [String?]
 
-    public init(text: String, displayBounds: CGRect) {
+    public init(text: String, displayBounds: CGRect, desktopNames: [String?] = []) {
         self.text = text
         self.displayBounds = displayBounds
+        self.desktopNames = desktopNames
     }
 }
 
-/// Large labels that stay in place above Mission Control.
+/// The current workspace name, large, at the centre of each display.
 final class WorkspaceBanner {
     static let fontSize: CGFloat = 72
     private static let padding = CGSize(width: 48, height: 20)
     private static let maximumWidth = 0.8
 
-    private(set) var windows: [NSWindow] = []
+    private(set) var windows: [LabelWindow] = []
 
     var isShowing: Bool { !windows.isEmpty }
     var windowNumbers: [Int] { windows.map(\.windowNumber) }
@@ -26,35 +31,11 @@ final class WorkspaceBanner {
     func show(_ labels: [WorkspaceLabel]) {
         hide()
         let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
-        windows = labels.map { label in
-            let text = NSTextField(labelWithString: label.text)
-            text.font = .systemFont(ofSize: Self.fontSize, weight: .bold)
-            text.textColor = .white
-            text.lineBreakMode = .byTruncatingTail
-            text.alignment = .center
-            let frame = Self.frame(textSize: text.fittingSize, displayBounds: label.displayBounds, primaryHeight: primaryHeight)
-
-            let window = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
-            // Mission Control shrinks ordinary windows into thumbnails; stationary windows are left where they are.
-            window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
-            window.level = .screenSaver
-            window.isOpaque = false
-            window.backgroundColor = .clear
-            window.hasShadow = false
-            window.ignoresMouseEvents = true
-            window.isReleasedWhenClosed = false
-
-            let background = NSView(frame: NSRect(origin: .zero, size: frame.size))
-            // The layer is assigned explicitly: one created on demand does not exist yet at this point.
-            let pill = CALayer()
-            pill.backgroundColor = NSColor.black.withAlphaComponent(0.65).cgColor
-            pill.cornerRadius = frame.height / 4
-            background.layer = pill
-            background.wantsLayer = true
-            text.frame = background.bounds.insetBy(dx: Self.padding.width / 2, dy: Self.padding.height / 2)
-            background.addSubview(text)
-            window.contentView = background
-            window.orderFrontRegardless()
+        let font = NSFont.systemFont(ofSize: Self.fontSize, weight: .bold)
+        windows = labels.filter { !$0.text.isEmpty }.map { label in
+            let textSize = (label.text as NSString).size(withAttributes: [.font: font])
+            let window = LabelWindow()
+            window.show(label.text, font: font, frame: Self.frame(textSize: textSize, displayBounds: label.displayBounds, primaryHeight: primaryHeight), backgroundAlpha: 0.65)
             return window
         }
     }

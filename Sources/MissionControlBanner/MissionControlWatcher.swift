@@ -22,8 +22,6 @@ public enum MissionControlWatcherError: Error, CustomStringConvertible {
 public final class MissionControlWatcher {
     private static let opened = "AXExposeShowAllWindows"
     private static let closed = "AXExposeExit"
-    /// Accessibility identifier of the group the Dock exposes while Mission Control is showing.
-    private static let groupIdentifier = "mc"
     private static let dockBundleID = "com.apple.dock"
 
     public var onOpen: (() -> Void)?
@@ -59,17 +57,9 @@ public final class MissionControlWatcher {
     /// Reports a failure to follow a relaunched Dock.
     public var onAttachFailure: ((Error) -> Void)?
 
-    /// Whether Mission Control is showing right now, read from the Dock.
-    public var isOpen: Bool {
-        guard let dock else { return false }
-        var children: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(dock, kAXChildrenAttribute as CFString, &children) == .success,
-              let elements = children as? [AXUIElement] else { return false }
-        return elements.contains { element in
-            var identifier: CFTypeRef?
-            return AXUIElementCopyAttributeValue(element, kAXIdentifierAttribute as CFString, &identifier) == .success
-                && identifier as? String == Self.groupIdentifier
-        }
+    /// The desktop bars of Mission Control; nil when it is not showing.
+    var desktopBars: [DesktopBar]? {
+        dock.flatMap(DesktopBarReader.bars)
     }
 
     private func attach() throws {
