@@ -23,4 +23,12 @@ final class KeyStrokeTests: XCTestCase {
     func testReadsModifiersFromEventFlagsIgnoringOthers() {
         XCTAssertEqual(KeyStroke.Modifiers([.maskAlternate, .maskShift, .maskSecondaryFn, .maskAlphaShift]), [.option, .shift])
     }
+
+    func testDisplaysShortcutsWithMacGlyphs() {
+        XCTAssertEqual(KeyStroke("ctrl+alt+shift+space")?.symbols, "⌃⌥⇧Space")
+        XCTAssertEqual(KeyStroke("cmd+r")?.symbols, "⌘R")
+        XCTAssertEqual(KeyStroke("ctrl+left")?.symbols, "⌃←")
+        XCTAssertEqual(KeyStroke("f5")?.symbols, "F5")
+        XCTAssertEqual(KeyStroke.Modifiers("alt+shift")?.symbols, "⌥⇧")
+    }
 }

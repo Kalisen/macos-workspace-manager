@@ -30,6 +30,11 @@ public struct KeyStroke: Equatable, Sendable {
             if flags.contains(.maskCommand) { insert(.command) }
         }
 
+        /// Standard macOS glyphs, e.g. "⌃⌥".
+        public var symbols: String {
+            (contains(.control) ? "⌃" : "") + (contains(.option) ? "⌥" : "") + (contains(.shift) ? "⇧" : "") + (contains(.command) ? "⌘" : "")
+        }
+
         static let names: [String: Modifiers] = [
             "ctrl": .control, "control": .control, "alt": .option, "option": .option, "opt": .option,
             "shift": .shift, "cmd": .command, "command": .command,
@@ -47,6 +52,13 @@ public struct KeyStroke: Equatable, Sendable {
         guard let key = parts.last, let keyCode = Self.keyCodes[key],
               let modifiers = Modifiers(parts.dropLast().joined(separator: "+")) else { return nil }
         self.init(keyCode: keyCode, modifiers: modifiers)
+    }
+
+    /// Human-readable form, e.g. "⌃⌥Space".
+    public var symbols: String {
+        let key = Self.keyCodes.first { $0.value == keyCode }?.key ?? "key \(keyCode)"
+        let glyphs = ["left": "←", "right": "→", "up": "↑", "down": "↓", "return": "↩", "tab": "⇥", "escape": "⎋"]
+        return modifiers.symbols + (glyphs[key] ?? (key.count == 1 ? key.uppercased() : key.capitalized))
     }
 
     /// ANSI virtual key codes.

@@ -1,6 +1,7 @@
 import AppKit
 import MacDesktop
 import os
+import ServiceManagement
 import Workspaces
 
 /// Menu-bar app: names workspaces, tracks which workspace each window belongs to, and puts windows back.
@@ -14,6 +15,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let work = DispatchQueue(label: "workspace-manager.moves")
     private let hotKeys = HotKeys()
     private var titleBarClick: TitleBarClick?
+    private let shortcutsPanel = ShortcutsPanel()
 
     private var settings = Settings()
     private var state = WorkspaceState()
@@ -97,17 +99,20 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 problems.append("Shortcut \(name) \"\(text)\" is taken by another app")
             }
         }
-        guard let modifiers = KeyStroke.Modifiers(settings.titleBarMenu.modifiers) else {
+        if KeyStroke.Modifiers(settings.titleBarMenu.modifiers) == nil {
             log.error("titleBarMenu.modifiers is not valid: \(self.settings.titleBarMenu.modifiers, privacy: .public)")
             problems.append("titleBarMenu.modifiers \"\(settings.titleBarMenu.modifiers)\" is not valid")
-            return
         }
+        watchTitleBarClicks()
+    }
+
+    /// Needs the Accessibility permission; retried on each observation until it is granted.
+    private func watchTitleBarClicks() {
+        guard titleBarClick == nil, AXIsProcessTrusted(), let modifiers = KeyStroke.Modifiers(settings.titleBarMenu.modifiers) else { return }
         titleBarClick = TitleBarClick(modifiers: modifiers, height: settings.titleBarMenu.height) { [weak self] windowID in
             self?.showSendMenu(for: windowID)
         }
-        if titleBarClick == nil {
-            log.warning("Title-bar menu unavailable until the Accessibility permission is granted")
-        }
+        if titleBarClick != nil { log.info("Title-bar menu active") }
     }
 
     // MARK: Observation
@@ -126,6 +131,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func observe() {
         guard !moving else { return }
+        watchTitleBarClicks()
         do {
             layout = try SpaceReader.layout()
             lastReadFailure = nil
@@ -210,7 +216,17 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
             notes.forEach { menu.addNote("⚠︎ \($0)") }
         }
         menu.addItem(.separator())
+        menu.addItem(ActionItem("Shortcuts…") { [weak self] in
+            guard let self else { return }
+            self.shortcutsPanel.show(self.settings)
+        })
         menu.addItem(ActionItem("Open Configuration") { NSWorkspace.shared.open(Settings.file) })
+        // Login items are registered per app bundle; a bare binary run from a terminal has none.
+        if Bundle.main.bundleIdentifier != nil {
+            let item = ActionItem("Start at Login") { [weak self] in self?.toggleStartAtLogin() }
+            item.state = SMAppService.mainApp.status == .enabled ? .on : .off
+            menu.addItem(item)
+        }
         menu.addItem(ActionItem("Quit Workspace Manager") { NSApp.terminate(nil) })
     }
 
@@ -303,6 +319,20 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         state.book.acceptCurrentLayout(windows, layout: layout)
         save()
         updateTitle()
+    }
+
+    private func toggleStartAtLogin() {
+        do {
+            if SMAppService.mainApp.status == .enabled {
+                try SMAppService.mainApp.unregister()
+            } else {
+                try SMAppService.mainApp.register()
+            }
+            log.info("Start at login is now \(SMAppService.mainApp.status == .enabled ? "on" : "off", privacy: .public)")
+        } catch {
+            log.error("Cannot change start at login: \(String(describing: error), privacy: .public)")
+            report("Start at Login could not be changed", [error.localizedDescription])
+        }
     }
 
     /// Moves each window to its home workspace, then returns to the desktops that were showing.

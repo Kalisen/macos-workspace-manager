@@ -16,7 +16,7 @@ Menu-bar app that turns Mission Control desktops into named workspaces and keeps
 | Send the focused window to a workspace | `ctrl+alt+shift+space` |
 | Send any window to a workspace | `alt+shift` + right-click on its title bar |
 | Restore displaced windows | `ctrl+alt+r` |
-| Rename the current desktop, keep the current layout | Menu-bar item |
+| Rename the current desktop, keep the current layout, start at login, list the shortcuts | Menu-bar item |
 
 Shortcuts are set in `~/Library/Application Support/WorkspaceManager/config.json` (menu: Open Configuration) and read at launch. An empty string disables a shortcut.
 
@@ -40,9 +40,12 @@ Shortcuts are set in `~/Library/Application Support/WorkspaceManager/config.json
 
 ## Build and run
 
+The app is ad-hoc signed: `make install` clears the previous permission grants and macOS asks for the two permissions again. Start at Login is only offered by the installed app.
+
 ```sh
 make run        # from a terminal, using the terminal's permissions
 make app        # build/WorkspaceManager.app
+make install    # copy it to /Applications and start it
 make status     # what the app sees: desktops, window counts, displaced windows
 make test
 make live-test  # moves a real TextEdit window; takes over the pointer for a few seconds

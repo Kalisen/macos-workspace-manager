@@ -1,6 +1,8 @@
 APP = build/WorkspaceManager.app
 
-.PHONY: build test live-test run status app
+INSTALLED = /Applications/WorkspaceManager.app
+
+.PHONY: build test live-test run status app install
 
 build:
 	swift build
@@ -26,3 +28,13 @@ app:
 	cp .build/release/WorkspaceManager $(APP)/Contents/MacOS/
 	cp Support/Info.plist $(APP)/Contents/
 	codesign --force --sign - $(APP)
+
+# Replaces the installed app and starts it. The ad-hoc signature changes with each build, so the
+# previous permission grants are cleared and macOS asks again.
+install: app
+	-pkill -x WorkspaceManager
+	-tccutil reset Accessibility io.github.kalisen.workspace-manager
+	-tccutil reset ScreenCapture io.github.kalisen.workspace-manager
+	rm -rf $(INSTALLED)
+	cp -R $(APP) $(INSTALLED)
+	open $(INSTALLED)
