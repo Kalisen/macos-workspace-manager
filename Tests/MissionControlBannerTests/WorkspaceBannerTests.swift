@@ -5,10 +5,10 @@ import XCTest
 final class WorkspaceBannerTests: XCTestCase {
     private let primaryHeight: CGFloat = 1000
 
-    func testLabelIsCentredNearTheBottomOfThePrimaryDisplay() {
+    func testLabelIsCentredOnThePrimaryDisplay() {
         let frame = WorkspaceBanner.frame(textSize: CGSize(width: 300, height: 80), displayBounds: CGRect(x: 0, y: 0, width: 2000, height: 1000), primaryHeight: primaryHeight)
         XCTAssertEqual(frame.midX, 1000)
-        XCTAssertEqual(frame.minY, 80)
+        XCTAssertEqual(frame.midY, 500)
         XCTAssertGreaterThan(frame.width, 300)
     }
 
@@ -17,7 +17,7 @@ final class WorkspaceBannerTests: XCTestCase {
         let display = CGRect(x: 2000, y: 400, width: 1000, height: 800)
         let frame = WorkspaceBanner.frame(textSize: CGSize(width: 300, height: 80), displayBounds: display, primaryHeight: primaryHeight)
         XCTAssertEqual(frame.midX, 2500)
-        XCTAssertEqual(frame.minY, (primaryHeight - display.maxY) + 64)
+        XCTAssertEqual(frame.midY, (primaryHeight - display.maxY) + 400)
     }
 
     func testLongNameIsLimitedToTheDisplayWidth() {

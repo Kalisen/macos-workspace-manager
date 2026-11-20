@@ -16,8 +16,6 @@ public struct WorkspaceLabel: Equatable {
 final class WorkspaceBanner {
     static let fontSize: CGFloat = 72
     private static let padding = CGSize(width: 48, height: 20)
-    /// Fraction of the display height between the bottom of the display and the label.
-    private static let bottomMargin = 0.08
     private static let maximumWidth = 0.8
 
     private(set) var windows: [NSWindow] = []
@@ -67,11 +65,11 @@ final class WorkspaceBanner {
     }
 
     /// Label frame in AppKit coordinates (origin at the bottom-left of the primary display):
-    /// centred horizontally, near the bottom of its display, never wider than the display allows.
+    /// centred on its display, never wider than the display allows.
     static func frame(textSize: CGSize, displayBounds: CGRect, primaryHeight: CGFloat) -> NSRect {
         let width = min(textSize.width + padding.width, displayBounds.width * maximumWidth)
         let height = textSize.height + padding.height
         let displayBottom = primaryHeight - displayBounds.maxY
-        return NSRect(x: displayBounds.midX - width / 2, y: displayBottom + displayBounds.height * bottomMargin, width: width, height: height)
+        return NSRect(x: displayBounds.midX - width / 2, y: displayBottom + (displayBounds.height - height) / 2, width: width, height: height)
     }
 }

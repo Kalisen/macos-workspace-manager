@@ -1,6 +1,6 @@
 import AppKit
 
-/// Shows the current workspace name in large characters on each display while Mission Control is open.
+/// Shows the current workspace name in large characters at the centre of each display while Mission Control is open.
 ///
 /// Self-contained: it depends on nothing else in the app, and if macOS stops cooperating the labels
 /// simply do not appear.
