@@ -28,6 +28,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var moving = false
     private var problems: [String] = []
     private var lastReadFailure: String?
+    /// Window IDs displaced at the last observation, to log only the changes.
+    private var lastDisplaced: Set<Int> = []
 
     // MARK: Lifecycle
 
@@ -120,8 +122,9 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Observation
 
-    @objc private func systemRearranged() {
+    @objc private func systemRearranged(_ notification: Notification) {
         settling.systemRearranged(at: Date())
+        log.notice("Settling period started by \(notification.name.rawValue, privacy: .public)")
     }
 
     @objc private func spaceChanged() {
@@ -169,8 +172,13 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         watchTitleBarClicks()
         startMissionControlOverlay()
         do {
+            let previous = layout
             layout = try SpaceReader.layout()
             lastReadFailure = nil
+            if layout.displays.map(\.id) != previous.displays.map(\.id) {
+                let summary = layout.displays.map { "\($0.id.prefix(8)) with \($0.desktops.count) desktops" }.joined(separator: ", ")
+                log.notice("Displays changed: \(summary, privacy: .public), settling \(!self.settling.isOver(at: Date()))")
+            }
         } catch {
             let failure = String(describing: error)
             if failure != lastReadFailure {
@@ -182,9 +190,32 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         windows = WindowReader.windows(in: layout)
         let before = state
-        state.book.observe(windows, layout: layout, session: SpaceReader.bootSession(), trusted: settling.isOver(at: Date()), now: Date())
+        let trusted = settling.isOver(at: Date())
+        state.book.observe(windows, layout: layout, session: SpaceReader.bootSession(), trusted: trusted, now: Date())
         if state != before { save() }
+        logPlacementChanges(since: before.book, trusted: trusted)
         updateTitle()
+    }
+
+    /// Traces every home change and every window entering or leaving the displaced list,
+    /// at a level the system log keeps: `log show --predicate 'subsystem == "workspace-manager"'`.
+    private func logPlacementChanges(since before: PlacementBook, trusted: Bool) {
+        func name(_ key: WorkspaceKey?) -> String {
+            key.map { state.names.name(of: $0, in: layout) } ?? "none"
+        }
+        for window in windows {
+            guard let old = before.home(ofWindow: window.windowID), let new = state.book.home(ofWindow: window.windowID), old != new else { continue }
+            log.notice("Re-homed \(window.appName, privacy: .public) #\(window.windowID): \(name(old), privacy: .public) → \(name(new), privacy: .public)")
+        }
+        let displaced = displaced
+        for item in displaced where !lastDisplaced.contains(item.window.windowID) {
+            log.notice("Displaced \(item.window.appName, privacy: .public) #\(item.window.windowID): home \(name(item.home), privacy: .public), now on \(name(self.layout.key(ofSpace: item.window.spaceID)), privacy: .public), settling \(!trusted)")
+        }
+        let now = Set(displaced.map(\.window.windowID))
+        for windowID in lastDisplaced.subtracting(now) {
+            log.notice("No longer displaced #\(windowID)")
+        }
+        lastDisplaced = now
     }
 
     private func save() {

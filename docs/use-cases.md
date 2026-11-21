@@ -29,7 +29,7 @@ Terms: a **workspace** is a Mission Control desktop that can hold windows (fulls
 | UC10 | Configure shortcuts | `config.json` sets the three shortcuts, the title-bar click modifiers, the title-bar height and the Mission Control banner. Missing keys keep their default; an empty shortcut is disabled; an invalid or taken one is reported in the menu. Applied at launch. |
 | UC11 | Look up shortcuts | "Shortcuts…" shows the shortcuts as configured, with a button opening `config.json`. |
 | UC12 | Start at login | Menu toggle, offered by the installed app. |
-| UC13 | Diagnose | The menu reports missing permissions and configuration problems. `WorkspaceManager --status` prints permissions, desktops, window counts and displaced windows. |
+| UC13 | Diagnose | The menu reports missing permissions and configuration problems. `WorkspaceManager --status` prints permissions, desktops, window counts and displaced windows. The system log (`log show --predicate 'subsystem == "workspace-manager"'`) records each home change, each window entering or leaving the displaced list, display changes and settling-period starts. |
 
 ## Not supported
 
