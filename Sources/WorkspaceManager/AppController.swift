@@ -171,13 +171,15 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard !moving else { return }
         watchTitleBarClicks()
         startMissionControlOverlay()
+        let session: String
         do {
             let previous = layout
             layout = try SpaceReader.layout()
+            session = try SpaceReader.bootSession()
             lastReadFailure = nil
-            if layout.displays.map(\.id) != previous.displays.map(\.id) {
+            if settling.displaysChanged(from: previous, to: layout, at: Date()) {
                 let summary = layout.displays.map { "\($0.id.prefix(8)) with \($0.desktops.count) desktops" }.joined(separator: ", ")
-                log.notice("Displays changed: \(summary, privacy: .public), settling \(!self.settling.isOver(at: Date()))")
+                log.notice("Settling period started by a display change: \(summary, privacy: .public)")
             }
         } catch {
             let failure = String(describing: error)
@@ -191,7 +193,7 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         windows = WindowReader.windows(in: layout)
         let before = state
         let trusted = settling.isOver(at: Date())
-        state.book.observe(windows, layout: layout, session: SpaceReader.bootSession(), trusted: trusted, now: Date())
+        state.book.observe(windows, layout: layout, session: session, trusted: trusted, now: Date())
         if state != before { save() }
         logPlacementChanges(since: before.book, trusted: trusted)
         updateTitle()

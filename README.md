@@ -40,7 +40,7 @@ Shortcuts are set in `~/Library/Application Support/WorkspaceManager/config.json
 
 - macOS 14 or later, System Integrity Protection left enabled. Developed and tested on macOS 26.6 only.
 - **Accessibility** permission: moving windows, title-bar click, labels and right-click rename in Mission Control.
-- **Screen Recording** permission: reading window titles on hidden desktops, needed to recognise windows after an app restart or reboot. Nothing is captured.
+- **Screen Recording** permission: reading window titles on hidden desktops, needed to recognise windows after an app restart or reboot; without it they are tracked as new windows. Nothing is captured.
 - Mission Control shortcuts **Move left a space** and **Move right a space** enabled (System Settings > Keyboard > Keyboard Shortcuts > Mission Control). Enabling **Switch to Desktop N** makes distant moves faster.
 
 ## Build and run
@@ -95,8 +95,8 @@ flowchart TD
 The app observes all windows every two seconds.
 
 - A window first seen on a desktop is homed there.
-- A window that changes desktop is re-homed, unless the change is seen within 60 seconds of a wake or display change. Those windows are *displaced*: they keep their home and are listed in the menu.
-- After an app restart or reboot, window IDs change. Windows are re-identified by app and title similarity; among identical titles, a window already on a matching home is preferred.
+- A window that changes desktop is re-homed, unless the change is seen within 60 seconds of a wake or display change (notified by macOS, or seen as a different set of displays). Those windows are *displaced*: they keep their home and are listed in the menu.
+- After an app restart or reboot, window IDs change. Windows are re-identified by app and title similarity; among identical titles, a window already on a matching home is preferred. A window whose title is unreadable is never matched. A boot is identified by `kern.bootsessionuuid`.
 - Workspaces are keyed by the Space UUID, which survives reboots and display reconnection.
 
 State is stored in `~/Library/Application Support/WorkspaceManager/state.json`.

@@ -2,8 +2,10 @@
 enum WindowMatching {
     static let minimumSimilarity = 0.5
 
-    /// 0...1 word overlap between two titles.
+    /// 0...1 word overlap between two titles. An unreadable (empty) title is similar to nothing:
+    /// pairing on it would hand a window the home of any other untitled window of its app.
     static func similarity(_ a: String, _ b: String) -> Double {
+        if a.isEmpty || b.isEmpty { return 0 }
         if a == b { return 1 }
         let wordsA = words(a), wordsB = words(b)
         if wordsA.isEmpty || wordsB.isEmpty { return 0 }

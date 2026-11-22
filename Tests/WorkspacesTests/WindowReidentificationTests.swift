@@ -33,12 +33,20 @@ final class WindowReidentificationTests: XCTestCase {
         XCTAssertEqual(book.home(ofWindow: 8), "one")
     }
 
-    /// Also the case of every window when titles are unreadable (no Screen Recording permission).
     func testAmongIdenticalTitlesAWindowAlreadyOnAHomeTakesThatHome() {
         book.see([window(1, space: 2, title: "~"), window(2, space: 3, title: "~")])
         let reopened = [window(60, space: 3, title: "~", pid: 5), window(61, space: 2, title: "~", pid: 5)]
         book.see(reopened, session: "boot2", trusted: false)
         XCTAssertEqual(book.homes(of: reopened), ["three", "two"])
+    }
+
+    /// Titles are empty without the Screen Recording permission.
+    func testAWindowWithAnUnreadableTitleDoesNotInheritAnUntitledWindowsHome() {
+        book.see([window(1, space: 2, title: "")])
+        let reopened = [window(60, space: 3, title: "", pid: 5)]
+        book.see(reopened, session: "boot2", trusted: false)
+        XCTAssertEqual(book.homes(of: reopened), ["three"])
+        XCTAssertTrue(book.displaced(reopened, layout: twoDisplays).isEmpty)
     }
 
     func testANewWindowOfARunningAppDoesNotInheritAClosedWindowsHome() {

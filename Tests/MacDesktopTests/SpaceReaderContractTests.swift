@@ -31,8 +31,8 @@ final class SpaceReaderContractTests: XCTestCase {
         }
     }
 
-    func testBootSessionIsStableWithinABoot() {
-        XCTAssertFalse(SpaceReader.bootSession().isEmpty)
-        XCTAssertEqual(SpaceReader.bootSession(), SpaceReader.bootSession())
+    func testBootSessionIsStableWithinABoot() throws {
+        XCTAssertNotNil(UUID(uuidString: try SpaceReader.bootSession()))
+        XCTAssertEqual(try SpaceReader.bootSession(), try SpaceReader.bootSession())
     }
 }

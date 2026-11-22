@@ -3,10 +3,12 @@ import Workspaces
 
 public enum SpaceReaderError: Error, CustomStringConvertible {
     case unexpectedShape(String)
+    case noBootSession(errno: Int32)
 
     public var description: String {
         switch self {
         case .unexpectedShape(let detail): "macOS returned Spaces data in an unknown shape: \(detail)"
+        case .noBootSession(let code): "macOS did not provide the boot session identifier (errno \(code))"
         }
     }
 }
@@ -63,11 +65,16 @@ public enum SpaceReader {
     }
 
     /// Changes at every boot; window IDs are only comparable within one boot session.
-    public static func bootSession() -> String {
-        var boot = timeval()
-        var size = MemoryLayout<timeval>.stride
-        var mib: [Int32] = [CTL_KERN, KERN_BOOTTIME]
-        sysctl(&mib, 2, &boot, &size, nil, 0)
-        return String(boot.tv_sec)
+    /// The kernel's boot time is not usable for this: it shifts when the clock is adjusted.
+    public static func bootSession() throws -> String {
+        var size = 0
+        guard sysctlbyname("kern.bootsessionuuid", nil, &size, nil, 0) == 0, size > 1 else {
+            throw SpaceReaderError.noBootSession(errno: errno)
+        }
+        var buffer = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("kern.bootsessionuuid", &buffer, &size, nil, 0) == 0 else {
+            throw SpaceReaderError.noBootSession(errno: errno)
+        }
+        return String(cString: buffer)
     }
 }

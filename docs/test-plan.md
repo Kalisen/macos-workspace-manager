@@ -37,14 +37,14 @@ Rules for placing a test:
 | UC5 | Sent window is displaced until it arrives, then at home | Unit | `testSendingAWindowMakesItDisplacedUntilItArrives` |
 | UC5 | Window moved to another desktop of the same display | Live | `testWindowMovesToAnotherDesktopAndBack` |
 | UC5 | Title-bar click, focused-window shortcut, menu entry | Manual | M3 |
-| UC6 | Settling period: starts settled, lasts 60 s, restarts | Unit | `SettlingPeriodTests` |
+| UC6 | Settling period: starts settled, lasts 60 s, restarts, starts when the set of displays changes | Unit | `SettlingPeriodTests` |
 | UC6 | Move during settling keeps home and home frame; user move afterwards re-homes | Unit | `PlacementBookTests` |
 | UC6 | Wake and display reconnect start the settling period; count shown | Manual | M4 |
 | UC7 | Window fetched from a hidden desktop, moved across displays, frame restored | Live | `testWindowMovesToAnotherDesktopAndBack` |
 | UC7 | Home desktop removed: still displaced | Unit | `testWindowStaysDisplacedWhenItsHomeDesktopWasRemoved` |
 | UC7 | Restore command, return to starting desktops, failure report | Manual | M4 |
 | UC8 | Accepting the layout clears displacements | Unit | `testKeepingTheCurrentLayoutClearsDisplacements` |
-| UC9 | Reboot, app restart, similar and unrelated titles, other app, identical or unreadable titles, new window of a running app, reused window ID | Unit | `WindowReidentificationTests` |
+| UC9 | Reboot, app restart, similar and unrelated titles, other app, identical titles, unreadable titles never matched, new window of a running app, reused window ID | Unit | `WindowReidentificationTests` |
 | UC9 | Placements persisted; stale ones dropped; unreadable state set aside | Unit | `StateStoreTests`, `PlacementBookTests` |
 | UC9 | Boot session identifier available | Contract | `testBootSessionIsStableWithinABoot` |
 | UC9 | Real app restart and reboot | Manual | M5 |
