@@ -39,6 +39,8 @@ Rules for placing a test:
 | UC5 | Title-bar click, focused-window shortcut, menu entry | Manual | M3 |
 | UC6 | Settling period: starts settled, lasts 60 s, restarts, starts when the set of displays changes | Unit | `SettlingPeriodTests` |
 | UC6 | Move during settling keeps home and home frame; user move afterwards re-homes | Unit | `PlacementBookTests` |
+| UC6 | Re-home seen just before settling is undone; an earlier one, a sent window and a kept layout stand | Unit | `PlacementBookTests` |
+| UC4, UC6 | Window out of sight then back elsewhere: re-homed, or displaced when settling happened meanwhile | Unit | `PlacementBookTests` |
 | UC6 | Wake and display reconnect start the settling period; count shown | Manual | M4 |
 | UC7 | Window fetched from a hidden desktop, moved across displays, frame restored | Live | `testWindowMovesToAnotherDesktopAndBack` |
 | UC7 | Home desktop removed: still displaced | Unit | `testWindowStaysDisplacedWhenItsHomeDesktopWasRemoved` |

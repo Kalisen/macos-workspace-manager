@@ -25,14 +25,28 @@ public struct Displacement: Equatable, Sendable {
 /// A window's home follows the user: moving a window to another desktop re-homes it.
 /// Moves seen while `trusted` is false (after wake or a display change, when macOS
 /// shuffles windows by itself) do not re-home, so the window shows up as displaced.
+/// macOS can start shuffling before the caller knows about it, so a re-home is undone when
+/// an untrusted observation follows it within `rehomeConfirmation`.
 public struct PlacementBook: Codable, Equatable, Sendable {
     static let retention: TimeInterval = 30 * 24 * 3600
     static let lastSeenGranularity: TimeInterval = 3600
+    /// Longest delay between macOS moving windows and the caller learning that it rearranged them.
+    static let rehomeConfirmation: TimeInterval = 10
+
+    /// What a re-home replaced, kept until the re-home is confirmed.
+    private struct PreviousHome: Sendable {
+        let home: WorkspaceKey
+        let frame: WindowFrame
+        let rehomedAt: Date
+    }
 
     /// Identifies the boot session; window IDs are only meaningful within one.
     public private(set) var session: String
     public private(set) var placements: [Placement]
+    /// Where each window was last observed. Kept while a window is out of sight (minimized, hidden,
+    /// fullscreen, mid-drag between desktops) so that its return elsewhere is seen as a move.
     private var lastObserved: [Int: WorkspaceKey] = [:]
+    private var unconfirmedRehomes: [Int: PreviousHome] = [:]
 
     private enum CodingKeys: String, CodingKey { case session, placements }
 
@@ -49,10 +63,21 @@ public struct PlacementBook: Codable, Equatable, Sendable {
         if session != self.session {
             self.session = session
             lastObserved = [:]
+            unconfirmedRehomes = [:]
             for i in placements.indices {
                 placements[i].windowID = 0
                 placements[i].pid = 0
             }
+        }
+
+        unconfirmedRehomes = unconfirmedRehomes.filter { now.timeIntervalSince($0.value.rehomedAt) <= Self.rehomeConfirmation }
+        if !trusted {
+            for (windowID, previous) in unconfirmedRehomes {
+                guard let i = placements.firstIndex(where: { $0.windowID == windowID }) else { continue }
+                placements[i].home = previous.home
+                placements[i].frame = previous.frame
+            }
+            unconfirmedRehomes = [:]
         }
 
         var indexByWindowID: [Int: Int] = [:]
@@ -94,7 +119,10 @@ public struct PlacementBook: Codable, Equatable, Sendable {
 
         for (window, i) in bound {
             guard let key = layout.key(ofSpace: window.spaceID) else { continue }
-            if trusted, let previous = lastObserved[window.windowID], previous != key {
+            if trusted, let previous = lastObserved[window.windowID], previous != key, placements[i].home != key {
+                if unconfirmedRehomes[window.windowID] == nil {
+                    unconfirmedRehomes[window.windowID] = PreviousHome(home: placements[i].home, frame: placements[i].frame, rehomedAt: now)
+                }
                 placements[i].home = key
             }
             if trusted, placements[i].home == key {
@@ -109,8 +137,11 @@ public struct PlacementBook: Codable, Equatable, Sendable {
         }
 
         let live = Set(windows.map(\.windowID))
-        lastObserved = lastObserved.filter { live.contains($0.key) }
         placements.removeAll { !live.contains($0.windowID) && now.timeIntervalSince($0.lastSeen) > Self.retention }
+        // A window out of sight while macOS rearranges may be moved by it: where it was is forgotten,
+        // so its return elsewhere leaves it displaced.
+        let remembered = trusted ? Set(placements.map(\.windowID)) : live
+        lastObserved = lastObserved.filter { remembered.contains($0.key) }
     }
 
     public func home(ofWindow windowID: Int) -> WorkspaceKey? {
@@ -121,6 +152,7 @@ public struct PlacementBook: Codable, Equatable, Sendable {
     public mutating func rehome(windowID: Int, to key: WorkspaceKey) {
         guard let i = placements.firstIndex(where: { $0.windowID == windowID }) else { return }
         placements[i].home = key
+        unconfirmedRehomes[windowID] = nil
     }
 
     /// Declares the current arrangement to be the intended one.
@@ -130,6 +162,7 @@ public struct PlacementBook: Codable, Equatable, Sendable {
                   let i = placements.firstIndex(where: { $0.windowID == window.windowID }) else { continue }
             placements[i].home = key
             placements[i].frame = window.frame
+            unconfirmedRehomes[window.windowID] = nil
         }
     }
 

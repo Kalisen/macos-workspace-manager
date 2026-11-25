@@ -96,6 +96,8 @@ The app observes all windows every two seconds.
 
 - A window first seen on a desktop is homed there.
 - A window that changes desktop is re-homed, unless the change is seen within 60 seconds of a wake or display change (notified by macOS, or seen as a different set of displays). Those windows are *displaced*: they keep their home and are listed in the menu.
+- A re-home seen up to 10 seconds before a wake or display change is undone: macOS moves windows before it announces the change.
+- A window out of sight (minimized, hidden, fullscreen, mid-drag between desktops) that comes back on another desktop is re-homed, unless a wake or display change happened meanwhile.
 - After an app restart or reboot, window IDs change. Windows are re-identified by app and title similarity; among identical titles, a window already on a matching home is preferred. A window whose title is unreadable is never matched. A boot is identified by `kern.bootsessionuuid`.
 - Workspaces are keyed by the Space UUID, which survives reboots and display reconnection.
 

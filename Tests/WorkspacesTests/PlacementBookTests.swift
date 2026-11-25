@@ -28,6 +28,55 @@ final class PlacementBookTests: XCTestCase {
         XCTAssertEqual(displaced.map(\.homeFrame), [frameA])
     }
 
+    func testMoveSeenJustBeforeSettlingIsUndone() {
+        book.see([window(1, space: 7, frame: frameA)])
+        let shuffled = [window(1, space: 2, frame: frameB)]
+        book.see(shuffled)
+        book.see(shuffled, trusted: false, at: someTime.addingTimeInterval(PlacementBook.rehomeConfirmation))
+        let displaced = book.displaced(shuffled, layout: twoDisplays)
+        XCTAssertEqual(displaced.map(\.home), ["seven"])
+        XCTAssertEqual(displaced.map(\.homeFrame), [frameA])
+    }
+
+    func testMoveSeenWellBeforeSettlingStands() {
+        book.see([window(1, space: 7)])
+        book.see([window(1, space: 2)])
+        book.see([window(1, space: 2)], trusted: false, at: someTime.addingTimeInterval(PlacementBook.rehomeConfirmation + 1))
+        XCTAssertEqual(book.home(ofWindow: 1), "two")
+    }
+
+    func testSendingAWindowJustBeforeSettlingStands() {
+        book.see([window(1, space: 2)])
+        book.see([window(1, space: 3)])
+        book.rehome(windowID: 1, to: "seven")
+        book.see([window(1, space: 7)], trusted: false)
+        XCTAssertEqual(book.home(ofWindow: 1), "seven")
+    }
+
+    func testKeepingTheCurrentLayoutJustBeforeSettlingStands() {
+        book.see([window(1, space: 2)])
+        let moved = [window(1, space: 3)]
+        book.see(moved)
+        book.acceptCurrentLayout(moved, layout: twoDisplays)
+        book.see(moved, trusted: false)
+        XCTAssertEqual(book.home(ofWindow: 1), "three")
+    }
+
+    /// A window is out of sight while minimized, hidden, fullscreen or dragged between desktops.
+    func testMoveOfWindowThatWentOutOfSightRehomesIt() {
+        book.see([window(1, space: 2)])
+        book.see([])
+        book.see([window(1, space: 3)])
+        XCTAssertEqual(book.home(ofWindow: 1), "three")
+    }
+
+    func testWindowOutOfSightDuringSettlingIsDisplacedWhenItReturnsElsewhere() {
+        book.see([window(1, space: 2)])
+        book.see([], trusted: false)
+        book.see([window(1, space: 7)])
+        XCTAssertEqual(book.home(ofWindow: 1), "two")
+    }
+
     func testUserMoveOfDisplacedWindowRehomesIt() {
         book.see([window(1, space: 2)])
         book.see([window(1, space: 7)], trusted: false)

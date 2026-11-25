@@ -207,7 +207,8 @@ final class AppController: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         for window in windows {
             guard let old = before.home(ofWindow: window.windowID), let new = state.book.home(ofWindow: window.windowID), old != new else { continue }
-            log.notice("Re-homed \(window.appName, privacy: .public) #\(window.windowID): \(name(old), privacy: .public) → \(name(new), privacy: .public)")
+            // Homes only change during the settling period to undo a re-home seen just before it.
+            log.notice("\(trusted ? "Re-homed" : "Undid re-home of", privacy: .public) \(window.appName, privacy: .public) #\(window.windowID): \(name(old), privacy: .public) → \(name(new), privacy: .public)")
         }
         let displaced = displaced
         for item in displaced where !lastDisplaced.contains(item.window.windowID) {

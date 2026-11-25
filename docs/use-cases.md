@@ -15,9 +15,9 @@ Terms: a **workspace** is a Mission Control desktop that can hold windows (fulls
 
 | ID | Use case | Behaviour |
 |---|---|---|
-| UC4 | A window belongs where I put it | A window is homed on the desktop where it is first seen. Moving it to another desktop by any macOS means re-homes it. |
+| UC4 | A window belongs where I put it | A window is homed on the desktop where it is first seen. Moving it to another desktop by any macOS means re-homes it, including when the window is out of sight during the move (minimized, hidden, fullscreen, mid-drag). |
 | UC5 | Send a window to a workspace | From the title bar (`alt+shift` + right-click), the focused-window shortcut (`ctrl+alt+shift+space`) or the menu. The window is moved and re-homed; the view stays on the current desktop. |
-| UC6 | Notice displaced windows | A desktop change seen within 60 seconds of a wake or display change does not re-home the window. A display change counts from the first observation that sees a different set of displays. The menu bar shows the displaced count; the menu lists each window with its home. |
+| UC6 | Notice displaced windows | A desktop change seen within 60 seconds of a wake or display change does not re-home the window. A display change counts from the first observation that sees a different set of displays. A re-home seen up to 10 seconds before the wake or display change is undone. A window out of sight during those 60 seconds that returns on another desktop is displaced. The menu bar shows the displaced count; the menu lists each window with its home. |
 | UC7 | Restore displaced windows | `ctrl+alt+r` or the menu moves every displaced window to its home and its home frame, across displays if needed, then returns to the desktops that were showing. Failures are listed with their reason; the other windows are still moved. |
 | UC8 | Keep the current layout | Accepts where the windows are now as their homes. |
 | UC9 | Keep homes across app restart and reboot | Windows are re-identified by app and title similarity. Windows reopened elsewhere show as displaced. A window whose title is unreadable is tracked as a new window on its current desktop. |
